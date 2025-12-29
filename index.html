@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Member Card Poin</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; margin: 0; padding: 20px; min-height: 100vh; }
+        .nav { text-align: center; margin-bottom: 20px; }
+        .nav button { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 0 10px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .nav button:hover { background: #0056b3; }
+        .page { display: none; animation: fadeIn 0.5s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        h1, h2 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); transition: transform 0.3s; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #ff7e5f, #feb47b); }
+        .card h3 { margin-top: 0; color: #007bff; }
+        input, select { margin: 10px 0; padding: 8px; border: 1px solid #ccc; border-radius: 5px; width: calc(100% - 20px); }
+        button { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; transition: background 0.3s; }
+        button:hover { background: #218838; }
+        .total { font-size: 1.2em; font-weight: bold; color: #ff5722; margin-top: 10px; }
+        .icon { font-size: 2em; color: #ffc107; margin-bottom: 10px; }
+        .result { margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <button onclick="showPage('hitung')">Hitung Poin</button>
+        <button onclick="showPage('daftar')">Daftar Member</button>
+    </div>
+    
+    <!-- Halaman 1: Hitung Poin -->
+    <div id="hitung" class="page active">
+        <h1>🧮 Hitung Poin Sendiri</h1>
+        <p>Input belanja, pilih nama, hitung poin, lalu simpan untuk update member.</p>
+        <div class="container">
+            <div class="card">
+                <div class="icon">💰</div>
+                <h3>Input Belanja</h3>
+                <p>Total Belanja: <input type="number" id="belanja" placeholder="misal 5000" min="0"> rupiah</p>
+                <button onclick="hitungOtomatis()">Hitung Otomatis (2000=1 poin)</button>
+                <p>Atau Poin Manual: <input type="number" id="manual" placeholder="isi poin sendiri" min="0"></p>
+                <p>Pilih Nama Member: 
+                    <select id="nama">
+                        <option value="Ahmad">Ahmad</option>
+                        <option value="Budi">Budi</option>
+                        <option value="Cici">Cici</option>
+                        <option value="Dedi">Dedi</option>
+                        <option value="Eka">Eka</option>
+                        <option value="Fani">Fani</option>
+                        <option value="Gina">Gina</option>
+                        <option value="Hana">Hana</option>
+                        <option value="Ika">Ika</option>
+                        <option value="Joko">Joko</option>
+                    </select>
+                </p>
+                <div class="result" id="result">Poin: 0</div>
+                <button onclick="simpanPoin()">Simpan ke Member</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Halaman 2: Daftar Member -->
+    <div id="daftar" class="page">
+        <h2>📋 Daftar Member Poin</h2>
+        <p>Poin total per nama (terupdate dari halaman Hitung).</p>
+        <div class="container" id="memberList">
+            <!-- Kartu member akan di-generate oleh JS -->
+        </div>
+    </div>
+    
+    <script>
+        // Default poin untuk 10 member
+        let defaultPoin = { Ahmad: 2, Budi: 1, Cici: 5, Dedi: 0, Eka: 0, Fani: 0, Gina: 0, Hana: 0, Ika: 0, Joko: 0 };
+        let poinData = JSON.parse(localStorage.getItem('poinData')) || defaultPoin;
+        
+        // Jika data lama kurang dari 10, merge dengan default
+        if (Object.keys(poinData).length < 10) {
+            poinData = { ...defaultPoin, ...poinData }; // Merge, default duluan
+            localStorage.setItem('poinData', JSON.stringify(poinData));
+        }
+        
+        // Fungsi switch halaman
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if (pageId === 'daftar') updateDaftar();
+        }
+        
+        // Hitung otomatis dari belanja
+        function hitungOtomatis() {
+            let belanja = document.getElementById('belanja').value;
+            let poin = Math.floor(belanja / 2000); // 2000 = 1 poin
+            document.getElementById('result').innerText = 'Poin: ' + poin;
+        }
+        
+        // Simpan poin ke localStorage (update member)
+        function simpanPoin() {
+            let nama = document.getElementById('nama').value;
+            let poinBaru = parseInt(document.getElementById('manual').value) || parseInt(document.getElementById('result').innerText.split(': ')[1]) || 0;
+            poinData[nama] = (poinData[nama] || 0) + poinBaru; // Kumulatif
+            localStorage.setItem('poinData', JSON.stringify(poinData));
+            alert('Poin ' + nama + ' updated! Lihat di Daftar Member.');
+            // Reset form
+            document.getElementById('belanja').value = '';
+            document.getElementById('manual').value = '';
+            document.getElementById('result').innerText = 'Poin: 0';
+        }
+        
+        // Update daftar member
+        function updateDaftar() {
+            let list = document.getElementById('memberList');
+            list.innerHTML = '';
+            for (let nama in poinData) {
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="icon">⭐</div>
+                    <h3>${nama}</h3>
+                    <p class="total">Total Poin: ${poinData[nama]}</p>
+                `;
+                list.appendChild(card);
+            }
+        }
+        
+        // Load daftar saat mulai
+        updateDaftar();
+    </script>
+</body>
+                                    </html>
